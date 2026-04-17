@@ -285,7 +285,7 @@
 
     <header>
       <h1>🎫 Turnos</h1>
-      <p>Sacá tu número y esperá</p>
+      <p>Saca tu número!</p>
       <a href="/admin.html">Panel de Daniel →</a>
     </header>
 
@@ -415,8 +415,8 @@
         if (!myTicket) {
           ticketSection.innerHTML = `
         <div class="card get-ticket">
-          <div class="label">Sacá tu turno</div>
-          <p class="subtitle">Tocá el botón y te avisamos cuando llegue tu número</p>
+          <div class="label">Saca tu turno</div>
+          <p class="subtitle">Toca el botón y te avisaremos cuando llegue tu número</p>
           <button class="btn btn-primary" onclick="takeTicket()">🎫 Quiero un turno</button>
         </div>`;
           return;
@@ -432,16 +432,16 @@
         <div class="card my-turn">
           <div class="label">Tu número</div>
           <div class="big-num">${myTicket}</div>
-          <p class="subtitle">🎉 ¡Es tu turno! Acercate a Daniel</p>
-          <button class="btn btn-ghost-white" onclick="releaseTicket()">Ya fui ✓</button>
+          <p class="subtitle">🎉 ¡Es tu turno! Acércate a Daniel</p>
+          <button class="btn btn-ghost-white" onclick="releaseTicket()">Ya he ido ✓</button>
         </div>`;
         } else {
           const aheadText =
             ahead === 0
               ? "Sos el próximo 🙌"
               : ahead === 1
-                ? "1 persona adelante tuyo"
-                : `${ahead} personas adelante tuyo`;
+                ? "1 persona delante de ti"
+                : `${ahead} personas delante de ti`;
           ticketSection.innerHTML = `
         <div class="card waiting">
           <div class="label">Tu número</div>
@@ -461,7 +461,7 @@
           localStorage.setItem("turno_ticket", myTicket);
           renderTicket();
         } catch (_) {
-          alert("No se pudo sacar turno. Revisá la conexión.");
+          alert("No se pudo sacar turno. Revisa la conexión.");
         }
       }
 
