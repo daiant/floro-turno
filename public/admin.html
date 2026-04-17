@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>👨‍💼 Panel – Daniel</title>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-dark: #3730a3;
+      --success: #059669;
+      --success-bg: #d1fae5;
+      --warning: #d97706;
+      --warning-bg: #fef3c7;
+      --danger: #dc2626;
+      --danger-bg: #fee2e2;
+      --text: #1e1b4b;
+      --muted: #6b7280;
+      --bg: #f0fdf4;
+      --card: #ffffff;
+      --r: 1.1rem;
+      --shadow: 0 4px 14px rgba(0,0,0,.08);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      color: var(--text);
+    }
+
+    header {
+      background: #1e1b4b;
+      color: white;
+      padding: 1.25rem 1rem 1rem;
+      text-align: center;
+    }
+    header h1 { font-size: 1.4rem; font-weight: 800; letter-spacing: -.03em; }
+    header p  { font-size: .82rem; opacity: .65; margin-top: .2rem; }
+    header a  { font-size: .72rem; color: rgba(255,255,255,.45); text-decoration: none; display: inline-block; margin-top: .5rem; }
+    header a:hover { color: white; }
+
+    main {
+      padding: 1.25rem 1rem 2.5rem;
+      max-width: 440px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding: 1.5rem 1.25rem;
+      text-align: center;
+    }
+    .label {
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: .4rem;
+    }
+    .big-num {
+      font-size: 6rem;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -.05em;
+      color: var(--primary);
+      transition: transform .25s, color .25s;
+    }
+    .big-num.zero { color: #c7d2fe; }
+    .big-num.pop  { transform: scale(1.1); }
+
+    /* stats row */
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .8rem;
+    }
+    .stat-card {
+      background: var(--card);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding: 1rem;
+      text-align: center;
+    }
+    .stat-num {
+      font-size: 2.8rem;
+      font-weight: 900;
+      letter-spacing: -.04em;
+    }
+    .stat-num.waiting-color { color: var(--warning); }
+    .stat-num.issued-color  { color: var(--primary); }
+    .stat-label {
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: .15rem;
+    }
+
+    /* main action button */
+    .btn-next {
+      display: block;
+      width: 100%;
+      padding: 1.5rem 1rem;
+      border: none;
+      border-radius: var(--r);
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: -.02em;
+      cursor: pointer;
+      transition: transform .1s, opacity .15s, box-shadow .15s;
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      color: white;
+      box-shadow: 0 6px 20px rgba(5,150,105,.35);
+    }
+    .btn-next:active { transform: scale(.97); box-shadow: 0 2px 8px rgba(5,150,105,.25); }
+    .btn-next:hover  { opacity: .94; }
+    .btn-next:disabled {
+      background: #d1d5db;
+      color: #9ca3af;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      display: block;
+      width: 100%;
+      padding: .9rem;
+      border: none;
+      border-radius: .8rem;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .1s, opacity .15s;
+      background: var(--primary);
+      color: white;
+    }
+    .btn-secondary:active { transform: scale(.97); }
+    .btn-secondary:hover  { opacity: .9; }
+
+    .btn-danger {
+      display: block;
+      width: 100%;
+      padding: .75rem;
+      border: 1.5px solid #fca5a5;
+      border-radius: .8rem;
+      font-size: .9rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: transparent;
+      color: var(--danger);
+      transition: transform .1s, background .15s;
+    }
+    .btn-danger:hover  { background: var(--danger-bg); }
+    .btn-danger:active { transform: scale(.97); }
+
+    .live {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .4rem;
+      margin-top: .6rem;
+      font-size: .72rem;
+      color: var(--muted);
+    }
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50%      { opacity: .3; }
+    }
+
+    /* toast */
+    #toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1e1b4b;
+      color: white;
+      padding: .75rem 1.5rem;
+      border-radius: 9999px;
+      font-weight: 700;
+      font-size: .95rem;
+      transition: transform .3s ease;
+      white-space: nowrap;
+      z-index: 100;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    .divider {
+      height: 1px;
+      background: #e5e7eb;
+      margin: .25rem 0;
+    }
+  </style>
+</head>
+<body>
+
+<div id="loginOverlay" style="display:none;position:fixed;inset:0;background:#1e1b4b;z-index:999;flex-direction:column;align-items:center;justify-content:center;padding:2rem;">
+  <div style="background:white;border-radius:1.25rem;padding:2rem 1.75rem;width:100%;max-width:340px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4);">
+    <div style="font-size:2.5rem;margin-bottom:.5rem;">🔐</div>
+    <h2 style="font-size:1.3rem;font-weight:800;color:#1e1b4b;margin-bottom:.25rem;">Panel de Daniel</h2>
+    <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.25rem;">Ingresá la contraseña para continuar</p>
+    <input id="pw" type="password" placeholder="Contraseña"
+      style="width:100%;padding:.85rem 1rem;border:1.5px solid #e5e7eb;border-radius:.75rem;font-size:1rem;outline:none;margin-bottom:.75rem;box-sizing:border-box;"
+      autofocus>
+    <p id="loginError" style="display:none;color:#dc2626;font-size:.82rem;margin-bottom:.6rem;font-weight:600;">Contraseña incorrecta, intentá de nuevo</p>
+    <button onclick="login()"
+      style="width:100%;padding:.9rem;background:#4f46e5;color:white;border:none;border-radius:.75rem;font-size:1rem;font-weight:800;cursor:pointer;">
+      Entrar →
+    </button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<header>
+  <h1>👨‍💼 Panel de Daniel</h1>
+  <p>Llamá el próximo turno cuando estés listo</p>
+  <a href="/">← Pantalla pública</a>
+</header>
+
+<main>
+  <!-- turno actual -->
+  <div class="card">
+    <div class="label">Atendiendo ahora</div>
+    <div class="big-num zero" id="currentTurn">–</div>
+    <div class="live"><div class="dot"></div> En vivo</div>
+  </div>
+
+  <!-- stats -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-num waiting-color" id="waitingCount">0</div>
+      <div class="stat-label">Esperando</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num issued-color" id="issuedCount">0</div>
+      <div class="stat-label">Emitidos</div>
+    </div>
+  </div>
+
+  <!-- next button -->
+  <button class="btn-next" id="btnNext" onclick="callNext()" disabled>
+    Llamar siguiente →
+  </button>
+
+  <div class="divider"></div>
+
+  <!-- reset -->
+  <button class="btn-danger" onclick="confirmReset()">
+    🔄 Reiniciar todo
+  </button>
+</main>
+
+<script>
+  let currentTurn = 0;
+  let lastTicket  = 0;
+  let token       = sessionStorage.getItem('ap') || '';
+
+  function authFetch(url, options = {}) {
+    return fetch(url, {
+      ...options,
+      headers: { ...options.headers, 'Authorization': 'Basic ' + btoa(':' + token) },
+    });
+  }
+
+  async function login() {
+    const pw = document.getElementById('pw').value.trim();
+    if (!pw) return;
+    const r = await fetch('/api/admin/ping', {
+      headers: { 'Authorization': 'Basic ' + btoa(':' + pw) },
+    });
+    if (r.ok) {
+      token = pw;
+      sessionStorage.setItem('ap', token);
+      document.getElementById('loginOverlay').style.display = 'none';
+    } else {
+      document.getElementById('loginError').style.display = 'block';
+      document.getElementById('pw').value = '';
+      document.getElementById('pw').focus();
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (token) {
+      // Verificar que el token guardado siga siendo válido
+      fetch('/api/admin/ping', {
+        headers: { 'Authorization': 'Basic ' + btoa(':' + token) },
+      }).then(r => {
+        if (!r.ok) {
+          sessionStorage.removeItem('ap');
+          token = '';
+          document.getElementById('loginOverlay').style.display = 'flex';
+        }
+      });
+    } else {
+      document.getElementById('loginOverlay').style.display = 'flex';
+    }
+    document.getElementById('pw').addEventListener('keydown', e => {
+      if (e.key === 'Enter') login();
+    });
+  });
+
+  const currentTurnEl  = document.getElementById('currentTurn');
+  const waitingCountEl = document.getElementById('waitingCount');
+  const issuedCountEl  = document.getElementById('issuedCount');
+  const btnNext        = document.getElementById('btnNext');
+  const toastEl        = document.getElementById('toast');
+
+  let toastTimer;
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2500);
+  }
+
+  function popNumber(el) {
+    el.classList.remove('pop');
+    void el.offsetWidth;
+    el.classList.add('pop');
+    setTimeout(() => el.classList.remove('pop'), 300);
+  }
+
+  function updateUI(data) {
+    const prev = currentTurn;
+    currentTurn = data.currentTurn;
+    lastTicket  = data.lastTicket;
+    const waiting = data.waiting;
+
+    if (currentTurn === 0) {
+      currentTurnEl.textContent = '–';
+      currentTurnEl.className = 'big-num zero';
+    } else {
+      currentTurnEl.textContent = currentTurn;
+      currentTurnEl.className = 'big-num';
+      if (currentTurn !== prev) popNumber(currentTurnEl);
+    }
+
+    waitingCountEl.textContent = waiting;
+    issuedCountEl.textContent  = lastTicket;
+
+    btnNext.disabled = waiting === 0;
+  }
+
+  async function callNext() {
+    btnNext.disabled = true;
+    try {
+      const r = await authFetch('/api/next', { method: 'POST' });
+      const d = await r.json();
+      showToast(`🔔 Turno ${d.currentTurn} llamado`);
+    } catch (_) {
+      showToast('Error de conexión');
+    }
+  }
+
+  async function confirmReset() {
+    if (!confirm('¿Reiniciar todos los turnos? Esta acción no se puede deshacer.')) return;
+    try {
+      await authFetch('/api/reset', { method: 'POST' });
+      showToast('✅ Turnos reiniciados');
+    } catch (_) {
+      showToast('Error de conexión');
+    }
+  }
+
+  // SSE
+  const sse = new EventSource('/api/events');
+  sse.onmessage = e => updateUI(JSON.parse(e.data));
+</script>
+</body>
+</html>
