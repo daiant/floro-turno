@@ -4,9 +4,10 @@ const path = require('path');
 const app = express();
 app.use(express.json());
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'floropower';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 function adminAuth(req, res, next) {
+  if (!ADMIN_PASSWORD) { res.status(500).json({ error: 'Admin password not set' }); return; }
   const auth = req.headers.authorization;
   if (auth && auth.startsWith('Basic ')) {
     const pass = Buffer.from(auth.slice(6), 'base64').toString().split(':')[1];
