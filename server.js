@@ -108,7 +108,7 @@ app.post('/api/reset', adminAuth, (_req, res) => {
   res.json({ success: true });
 });
 
-const PORT = 80;
+const PORT = 3000;
 app.listen(PORT, () => {
   console.log('\n🎫  Sistema de Turnos listo!');
   console.log(`   Pantalla pública : http://localhost:${PORT}`);
