@@ -1,388 +1,486 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <title>🎫 Turnos</title>
-  <style>
-    :root {
-      --primary: #4f46e5;
-      --primary-dark: #3730a3;
-      --primary-bg: #eef2ff;
-      --success: #059669;
-      --success-bg: #d1fae5;
-      --warning: #d97706;
-      --warning-bg: #fef3c7;
-      --danger: #dc2626;
-      --text: #1e1b4b;
-      --muted: #6b7280;
-      --bg: #f5f3ff;
-      --card: #ffffff;
-      --r: 1.1rem;
-      --shadow: 0 4px 14px rgba(0,0,0,.08);
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--bg);
-      min-height: 100vh;
-      color: var(--text);
-    }
-    header {
-      background: var(--primary);
-      color: white;
-      padding: 1.25rem 1rem 1rem;
-      text-align: center;
-    }
-    header h1 { font-size: 1.4rem; font-weight: 800; letter-spacing: -.03em; }
-    header p  { font-size: .85rem; opacity: .8; margin-top: .2rem; }
-    header a  { font-size: .72rem; color: rgba(255,255,255,.55); text-decoration: none; display: inline-block; margin-top: .5rem; }
-    header a:hover { color: white; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+    />
+    <title>🎫 Turnos</title>
+    <style>
+      :root {
+        --primary: #4f46e5;
+        --primary-dark: #3730a3;
+        --primary-bg: #eef2ff;
+        --success: #059669;
+        --success-bg: #d1fae5;
+        --warning: #d97706;
+        --warning-bg: #fef3c7;
+        --danger: #dc2626;
+        --text: #1e1b4b;
+        --muted: #6b7280;
+        --bg: #f5f3ff;
+        --card: #ffffff;
+        --r: 1.1rem;
+        --shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: var(--bg);
+        min-height: 100vh;
+        color: var(--text);
+      }
+      header {
+        background: var(--primary);
+        color: white;
+        padding: 1.25rem 1rem 1rem;
+        text-align: center;
+      }
+      header h1 {
+        font-size: 1.4rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+      header p {
+        font-size: 0.85rem;
+        opacity: 0.8;
+        margin-top: 0.2rem;
+      }
+      header a {
+        font-size: 0.72rem;
+        color: rgba(255, 255, 255, 0.55);
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 0.5rem;
+      }
+      header a:hover {
+        color: white;
+      }
 
-    main {
-      padding: 1.25rem 1rem 2rem;
-      max-width: 440px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 1.1rem;
-    }
+      main {
+        padding: 1.25rem 1rem 2rem;
+        max-width: 440px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1.1rem;
+      }
 
-    /* ── card base ── */
-    .card {
-      background: var(--card);
-      border-radius: var(--r);
-      box-shadow: var(--shadow);
-      padding: 1.5rem 1.25rem;
-      text-align: center;
-    }
-    .label {
-      font-size: .7rem;
-      font-weight: 700;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: .4rem;
-    }
-    .big-num {
-      font-size: 5.5rem;
-      font-weight: 900;
-      line-height: 1;
-      letter-spacing: -.05em;
-      color: var(--primary);
-      transition: transform .25s, color .25s;
-    }
-    .big-num.zero { color: #c7d2fe; }
-    .big-num.pop  { transform: scale(1.12); }
+      /* ── card base ── */
+      .card {
+        background: var(--card);
+        border-radius: var(--r);
+        box-shadow: var(--shadow);
+        padding: 1.5rem 1.25rem;
+        text-align: center;
+      }
+      .label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 0.4rem;
+      }
+      .big-num {
+        font-size: 5.5rem;
+        font-weight: 900;
+        line-height: 1;
+        letter-spacing: -0.05em;
+        color: var(--primary);
+        transition:
+          transform 0.25s,
+          color 0.25s;
+      }
+      .big-num.zero {
+        color: #c7d2fe;
+      }
+      .big-num.pop {
+        transform: scale(1.12);
+      }
 
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: .35rem;
-      margin-top: .75rem;
-      padding: .3rem .85rem;
-      border-radius: 9999px;
-      font-size: .82rem;
-      font-weight: 700;
-    }
-    .badge.green { background: var(--success-bg); color: #065f46; }
-    .badge.amber { background: var(--warning-bg); color: #92400e; }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin-top: 0.75rem;
+        padding: 0.3rem 0.85rem;
+        border-radius: 9999px;
+        font-size: 0.82rem;
+        font-weight: 700;
+      }
+      .badge.green {
+        background: var(--success-bg);
+        color: #065f46;
+      }
+      .badge.amber {
+        background: var(--warning-bg);
+        color: #92400e;
+      }
 
-    .live {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: .4rem;
-      margin-top: .6rem;
-      font-size: .72rem;
-      color: var(--muted);
-    }
-    .dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: var(--success);
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0%,100% { opacity: 1; }
-      50%      { opacity: .3; }
-    }
+      .live {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        margin-top: 0.6rem;
+        font-size: 0.72rem;
+        color: var(--muted);
+      }
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--success);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+        }
+      }
 
-    /* ── ticket cards ── */
-    #ticketSection .card.get-ticket {}
-    #ticketSection .card.my-turn {
-      background: linear-gradient(135deg, #059669 0%, #047857 100%);
-      color: white;
-    }
-    #ticketSection .card.my-turn .label { color: rgba(255,255,255,.75); }
-    #ticketSection .card.my-turn .big-num { color: white; font-size: 6rem; }
+      /* ── ticket cards ── */
+      #ticketSection .card.get-ticket {
+      }
+      #ticketSection .card.my-turn {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        color: white;
+      }
+      #ticketSection .card.my-turn .label {
+        color: rgba(255, 255, 255, 0.75);
+      }
+      #ticketSection .card.my-turn .big-num {
+        color: white;
+        font-size: 6rem;
+      }
 
-    #ticketSection .card.waiting { }
-    #ticketSection .card.waiting .big-num { color: var(--warning); }
+      #ticketSection .card.waiting {
+      }
+      #ticketSection .card.waiting .big-num {
+        color: var(--warning);
+      }
 
-    .subtitle {
-      font-size: .95rem;
-      color: var(--muted);
-      margin: .5rem 0 1.1rem;
-      line-height: 1.4;
-    }
-    .my-turn .subtitle { color: rgba(255,255,255,.85); margin-bottom: .85rem; }
+      .subtitle {
+        font-size: 0.95rem;
+        color: var(--muted);
+        margin: 0.5rem 0 1.1rem;
+        line-height: 1.4;
+      }
+      .my-turn .subtitle {
+        color: rgba(255, 255, 255, 0.85);
+        margin-bottom: 0.85rem;
+      }
 
-    .ahead-text {
-      font-size: 1rem;
-      color: var(--muted);
-      margin-top: .5rem;
-    }
+      .ahead-text {
+        font-size: 1rem;
+        color: var(--muted);
+        margin-top: 0.5rem;
+      }
 
-    /* ── buttons ── */
-    .btn {
-      display: block;
-      width: 100%;
-      padding: 1rem;
-      border: none;
-      border-radius: .8rem;
-      font-size: 1.1rem;
-      font-weight: 800;
-      cursor: pointer;
-      transition: transform .1s, opacity .15s;
-      letter-spacing: -.01em;
-    }
-    .btn:active { transform: scale(.96); }
-    .btn-primary  { background: var(--primary); color: white; }
-    .btn-primary:hover { opacity: .9; }
-    .btn-ghost {
-      background: transparent;
-      border: 1.5px solid #e5e7eb;
-      color: var(--muted);
-      font-size: .85rem;
-      padding: .65rem;
-      margin-top: .6rem;
-    }
-    .btn-ghost-white {
-      background: rgba(255,255,255,.18);
-      border: 1.5px solid rgba(255,255,255,.35);
-      color: white;
-      font-size: .9rem;
-      padding: .7rem;
-      margin-top: .75rem;
-    }
+      /* ── buttons ── */
+      .btn {
+        display: block;
+        width: 100%;
+        padding: 1rem;
+        border: none;
+        border-radius: 0.8rem;
+        font-size: 1.1rem;
+        font-weight: 800;
+        cursor: pointer;
+        transition:
+          transform 0.1s,
+          opacity 0.15s;
+        letter-spacing: -0.01em;
+      }
+      .btn:active {
+        transform: scale(0.96);
+      }
+      .btn-primary {
+        background: var(--primary);
+        color: white;
+      }
+      .btn-primary:hover {
+        opacity: 0.9;
+      }
+      .btn-ghost {
+        background: transparent;
+        border: 1.5px solid #e5e7eb;
+        color: var(--muted);
+        font-size: 0.85rem;
+        padding: 0.65rem;
+        margin-top: 0.6rem;
+      }
+      .btn-ghost-white {
+        background: rgba(255, 255, 255, 0.18);
+        border: 1.5px solid rgba(255, 255, 255, 0.35);
+        color: white;
+        font-size: 0.9rem;
+        padding: 0.7rem;
+        margin-top: 0.75rem;
+      }
 
-    /* ── flash overlay ── */
-    #flash {
-      display: none;
-      position: fixed; inset: 0;
-      background: rgba(5,150,105,.92);
-      z-index: 999;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      text-align: center;
-      padding: 2rem;
-    }
-    #flash.show { display: flex; }
-    #flash .flash-num { font-size: 8rem; font-weight: 900; line-height: 1; }
-    #flash h2 { font-size: 2rem; font-weight: 800; margin-top: .5rem; }
-    #flash p  { font-size: 1.1rem; opacity: .85; margin-top: .5rem; }
-    #flash button {
-      margin-top: 2rem;
-      background: white;
-      color: #059669;
-      font-weight: 800;
-      font-size: 1.1rem;
-      padding: 1rem 2rem;
-      border: none;
-      border-radius: .8rem;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
+      /* ── flash overlay ── */
+      #flash {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(5, 150, 105, 0.92);
+        z-index: 999;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        text-align: center;
+        padding: 2rem;
+      }
+      #flash.show {
+        display: flex;
+      }
+      #flash .flash-num {
+        font-size: 8rem;
+        font-weight: 900;
+        line-height: 1;
+      }
+      #flash h2 {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-top: 0.5rem;
+      }
+      #flash p {
+        font-size: 1.1rem;
+        opacity: 0.85;
+        margin-top: 0.5rem;
+      }
+      #flash button {
+        margin-top: 2rem;
+        background: white;
+        color: #059669;
+        font-weight: 800;
+        font-size: 1.1rem;
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 0.8rem;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="flash">
+      <div class="flash-num" id="flashNum"></div>
+      <h2>¡Es tu turno!</h2>
+      <p>Acercate a Daniel ahora 🙌</p>
+      <button onclick="dismissFlash()">Entendido ✓</button>
+    </div>
 
-<div id="flash">
-  <div class="flash-num" id="flashNum"></div>
-  <h2>¡Es tu turno!</h2>
-  <p>Acercate a Daniel ahora 🙌</p>
-  <button onclick="dismissFlash()">Entendido ✓</button>
-</div>
+    <header>
+      <h1>🎫 Turnos</h1>
+      <p>Sacá tu número y esperá</p>
+      <a href="/admin.html">Panel de Daniel →</a>
+    </header>
 
-<header>
-  <h1>🎫 Turnos</h1>
-  <p>Sacá tu número y esperá</p>
-  <a href="/admin.html">Panel de Daniel →</a>
-</header>
+    <main>
+      <!-- turno actual -->
+      <div class="card">
+        <div class="label">Atendiendo ahora</div>
+        <div class="big-num zero" id="currentTurn">–</div>
+        <div class="badge green" id="waitingBadge">Trabajando en sus cosas</div>
+        <div class="live">
+          <div class="dot"></div>
+          En vivo
+        </div>
+      </div>
 
-<main>
-  <!-- turno actual -->
-  <div class="card">
-    <div class="label">Atendiendo ahora</div>
-    <div class="big-num zero" id="currentTurn">–</div>
-    <div class="badge green" id="waitingBadge">Sin espera</div>
-    <div class="live"><div class="dot"></div> En vivo</div>
-  </div>
+      <!-- mi turno -->
+      <div id="ticketSection"></div>
+    </main>
 
-  <!-- mi turno -->
-  <div id="ticketSection"></div>
-</main>
+    <script>
+      let myTicket = parseInt(localStorage.getItem("turno_ticket")) || null;
+      let currentTurn = 0;
+      let lastTicket = 0;
+      let activeTickets = [];
 
-<script>
-  let myTicket = parseInt(localStorage.getItem('turno_ticket')) || null;
-  let currentTurn  = 0;
-  let lastTicket   = 0;
-  let activeTickets = [];
+      let flashShown = false;
 
-  let flashShown = false;
+      const currentTurnEl = document.getElementById("currentTurn");
+      const waitingBadgeEl = document.getElementById("waitingBadge");
+      const ticketSection = document.getElementById("ticketSection");
+      const flashEl = document.getElementById("flash");
+      const flashNumEl = document.getElementById("flashNum");
 
-  const currentTurnEl  = document.getElementById('currentTurn');
-  const waitingBadgeEl = document.getElementById('waitingBadge');
-  const ticketSection  = document.getElementById('ticketSection');
-  const flashEl        = document.getElementById('flash');
-  const flashNumEl     = document.getElementById('flashNum');
+      // Web Audio beep
+      function beep() {
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          [440, 550, 660].forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = freq;
+            osc.type = "sine";
+            gain.gain.setValueAtTime(0.4, ctx.currentTime + i * 0.15);
+            gain.gain.exponentialRampToValueAtTime(
+              0.001,
+              ctx.currentTime + i * 0.15 + 0.3,
+            );
+            osc.start(ctx.currentTime + i * 0.15);
+            osc.stop(ctx.currentTime + i * 0.15 + 0.3);
+          });
+        } catch (_) {}
+      }
 
-  // Web Audio beep
-  function beep() {
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      [440, 550, 660].forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.frequency.value = freq;
-        osc.type = 'sine';
-        gain.gain.setValueAtTime(.4, ctx.currentTime + i * .15);
-        gain.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + i * .15 + .3);
-        osc.start(ctx.currentTime + i * .15);
-        osc.stop(ctx.currentTime + i * .15 + .3);
-      });
-    } catch (_) {}
-  }
+      function vibrate() {
+        try {
+          navigator.vibrate?.([200, 100, 200, 100, 400]);
+        } catch (_) {}
+      }
 
-  function vibrate() {
-    try { navigator.vibrate?.([200, 100, 200, 100, 400]); } catch (_) {}
-  }
+      function showFlash(num) {
+        flashNumEl.textContent = num;
+        flashEl.classList.add("show");
+        beep();
+        vibrate();
+      }
 
-  function showFlash(num) {
-    flashNumEl.textContent = num;
-    flashEl.classList.add('show');
-    beep(); vibrate();
-  }
+      function dismissFlash() {
+        flashEl.classList.remove("show");
+      }
 
-  function dismissFlash() {
-    flashEl.classList.remove('show');
-  }
+      function popNumber(el) {
+        el.classList.remove("pop");
+        void el.offsetWidth;
+        el.classList.add("pop");
+        setTimeout(() => el.classList.remove("pop"), 300);
+      }
 
-  function popNumber(el) {
-    el.classList.remove('pop');
-    void el.offsetWidth;
-    el.classList.add('pop');
-    setTimeout(() => el.classList.remove('pop'), 300);
-  }
+      function updateUI(data) {
+        const prevTurn = currentTurn;
+        currentTurn = data.currentTurn;
+        lastTicket = data.lastTicket;
+        activeTickets = data.active || [];
 
-  function updateUI(data) {
-    const prevTurn = currentTurn;
-    currentTurn   = data.currentTurn;
-    lastTicket    = data.lastTicket;
-    activeTickets = data.active || [];
+        // validate stale ticket (server reset o cancelado desde otro lado)
+        if (
+          myTicket &&
+          !activeTickets.includes(myTicket) &&
+          myTicket !== currentTurn
+        ) {
+          myTicket = null;
+          localStorage.removeItem("turno_ticket");
+        }
 
-    // validate stale ticket (server reset o cancelado desde otro lado)
-    if (myTicket && !activeTickets.includes(myTicket) && myTicket !== currentTurn) {
-      myTicket = null;
-      localStorage.removeItem('turno_ticket');
-    }
+        // current turn display
+        if (currentTurn === 0) {
+          currentTurnEl.textContent = "–";
+          currentTurnEl.className = "big-num zero";
+        } else {
+          currentTurnEl.textContent = currentTurn;
+          currentTurnEl.className = "big-num";
+          if (currentTurn !== prevTurn) popNumber(currentTurnEl);
+        }
 
-    // current turn display
-    if (currentTurn === 0) {
-      currentTurnEl.textContent = '–';
-      currentTurnEl.className = 'big-num zero';
-    } else {
-      currentTurnEl.textContent = currentTurn;
-      currentTurnEl.className = 'big-num';
-      if (currentTurn !== prevTurn) popNumber(currentTurnEl);
-    }
+        // badge
+        const w = data.waiting;
+        if (w === 0) {
+          waitingBadgeEl.textContent = "Trabajando en sus cosas";
+          waitingBadgeEl.className = "badge green";
+        } else {
+          waitingBadgeEl.textContent = `${w} ${w === 1 ? "persona" : "personas"} esperando`;
+          waitingBadgeEl.className = "badge amber";
+        }
 
-    // badge
-    const w = data.waiting;
-    if (w === 0) {
-      waitingBadgeEl.textContent = 'Sin espera';
-      waitingBadgeEl.className = 'badge green';
-    } else {
-      waitingBadgeEl.textContent = `${w} ${w === 1 ? 'persona' : 'personas'} esperando`;
-      waitingBadgeEl.className = 'badge amber';
-    }
+        // check if it's my turn
+        if (myTicket && myTicket === currentTurn && !flashShown) {
+          flashShown = true;
+          showFlash(myTicket);
+        }
+        if (myTicket && myTicket !== currentTurn) flashShown = false;
 
-    // check if it's my turn
-    if (myTicket && myTicket === currentTurn && !flashShown) {
-      flashShown = true;
-      showFlash(myTicket);
-    }
-    if (myTicket && myTicket !== currentTurn) flashShown = false;
+        renderTicket();
+      }
 
-    renderTicket();
-  }
-
-  function renderTicket() {
-    if (!myTicket) {
-      ticketSection.innerHTML = `
+      function renderTicket() {
+        if (!myTicket) {
+          ticketSection.innerHTML = `
         <div class="card get-ticket">
           <div class="label">Sacá tu turno</div>
           <p class="subtitle">Tocá el botón y te avisamos cuando llegue tu número</p>
           <button class="btn btn-primary" onclick="takeTicket()">🎫 Quiero un turno</button>
         </div>`;
-      return;
-    }
+          return;
+        }
 
-    const ahead = activeTickets.filter(t => t > currentTurn && t < myTicket).length;
-    const isMyTurn = currentTurn === myTicket;
+        const ahead = activeTickets.filter(
+          (t) => t > currentTurn && t < myTicket,
+        ).length;
+        const isMyTurn = currentTurn === myTicket;
 
-    if (isMyTurn) {
-      ticketSection.innerHTML = `
+        if (isMyTurn) {
+          ticketSection.innerHTML = `
         <div class="card my-turn">
           <div class="label">Tu número</div>
           <div class="big-num">${myTicket}</div>
           <p class="subtitle">🎉 ¡Es tu turno! Acercate a Daniel</p>
           <button class="btn btn-ghost-white" onclick="releaseTicket()">Ya fui ✓</button>
         </div>`;
-    } else {
-      const aheadText = ahead === 0
-        ? 'Sos el próximo 🙌'
-        : ahead === 1 ? '1 persona adelante tuyo' : `${ahead} personas adelante tuyo`;
-      ticketSection.innerHTML = `
+        } else {
+          const aheadText =
+            ahead === 0
+              ? "Sos el próximo 🙌"
+              : ahead === 1
+                ? "1 persona adelante tuyo"
+                : `${ahead} personas adelante tuyo`;
+          ticketSection.innerHTML = `
         <div class="card waiting">
           <div class="label">Tu número</div>
           <div class="big-num">${myTicket}</div>
           <p class="ahead-text">${aheadText}</p>
           <button class="btn btn-ghost" style="margin-top:1rem" onclick="releaseTicket()">Cancelar turno</button>
         </div>`;
-    }
-  }
+        }
+      }
 
-  async function takeTicket() {
-    try {
-      const r = await fetch('/api/ticket', { method: 'POST' });
-      const d = await r.json();
-      myTicket   = d.ticket;
-      flashShown = false;
-      localStorage.setItem('turno_ticket', myTicket);
+      async function takeTicket() {
+        try {
+          const r = await fetch("/api/ticket", { method: "POST" });
+          const d = await r.json();
+          myTicket = d.ticket;
+          flashShown = false;
+          localStorage.setItem("turno_ticket", myTicket);
+          renderTicket();
+        } catch (_) {
+          alert("No se pudo sacar turno. Revisá la conexión.");
+        }
+      }
+
+      async function releaseTicket() {
+        const num = myTicket;
+        myTicket = null;
+        flashShown = false;
+        localStorage.removeItem("turno_ticket");
+        renderTicket();
+        try {
+          await fetch(`/api/ticket/${num}`, { method: "DELETE" });
+        } catch (_) {}
+      }
+
+      // SSE
+      const sse = new EventSource("/api/events");
+      sse.onmessage = (e) => updateUI(JSON.parse(e.data));
+
       renderTicket();
-    } catch (_) {
-      alert('No se pudo sacar turno. Revisá la conexión.');
-    }
-  }
-
-  async function releaseTicket() {
-    const num = myTicket;
-    myTicket   = null;
-    flashShown = false;
-    localStorage.removeItem('turno_ticket');
-    renderTicket();
-    try { await fetch(`/api/ticket/${num}`, { method: 'DELETE' }); } catch (_) {}
-  }
-
-  // SSE
-  const sse = new EventSource('/api/events');
-  sse.onmessage = e => updateUI(JSON.parse(e.data));
-
-  renderTicket();
-</script>
-</body>
+    </script>
+  </body>
 </html>
