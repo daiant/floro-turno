@@ -42,7 +42,7 @@ function getPayload() {
 function broadcast() {
   const data = `data: ${getPayload()}\n\n`;
   for (const res of state.clients) {
-    try { res.write(data); } catch (_) {}
+    try { res.write(data); } catch (_) { }
   }
 }
 
@@ -108,7 +108,7 @@ app.post('/api/reset', adminAuth, (_req, res) => {
   res.json({ success: true });
 });
 
-const PORT = 4300;
+const PORT = 80;
 app.listen(PORT, () => {
   console.log('\n🎫  Sistema de Turnos listo!');
   console.log(`   Pantalla pública : http://localhost:${PORT}`);
