@@ -7,6 +7,7 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
     />
     <title>👨‍💼 Panel – Daniel</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <style>
       :root {
         --primary: #4f46e5;
@@ -215,6 +216,101 @@
         transform: scale(0.97);
       }
 
+      /* reject (current turn) */
+      .btn-reject {
+        display: block;
+        width: 100%;
+        padding: 0.85rem;
+        border: 1.5px solid #fcd34d;
+        border-radius: 0.8rem;
+        font-size: 0.95rem;
+        font-weight: 700;
+        cursor: pointer;
+        background: transparent;
+        color: #92400e;
+        margin-top: 0.5rem;
+        transition: transform 0.1s, background 0.15s;
+      }
+      .btn-reject:hover { background: var(--warning-bg); }
+      .btn-reject:active { transform: scale(0.97); }
+      .btn-reject:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      /* current person info */
+      .current-person {
+        margin-top: 0.85rem;
+        padding-top: 0.85rem;
+        border-top: 1px solid #e5e7eb;
+        text-align: left;
+      }
+      .current-person .name {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: var(--text);
+        word-break: break-word;
+      }
+      .current-person .subject {
+        font-size: 0.92rem;
+        color: var(--muted);
+        margin-top: 0.3rem;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .current-person .empty {
+        font-size: 0.85rem;
+        color: var(--muted);
+        font-style: italic;
+      }
+
+      /* queue list */
+      .queue-section .label {
+        text-align: left;
+        margin-bottom: 0.7rem;
+      }
+      .queue-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .queue-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 0.7rem 0.8rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.65rem;
+        text-align: left;
+      }
+      .queue-item .num {
+        flex: 0 0 auto;
+        min-width: 2.2rem;
+        font-weight: 900;
+        color: var(--primary);
+        font-size: 1.1rem;
+      }
+      .queue-item .meta { flex: 1 1 auto; min-width: 0; }
+      .queue-item .qname {
+        font-weight: 700;
+        font-size: 0.95rem;
+        word-break: break-word;
+      }
+      .queue-item .qsubj {
+        font-size: 0.82rem;
+        color: var(--muted);
+        margin-top: 0.15rem;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .queue-empty {
+        font-size: 0.88rem;
+        color: var(--muted);
+        font-style: italic;
+        text-align: left;
+      }
+
       .live {
         display: flex;
         align-items: center;
@@ -372,6 +468,9 @@
           <div class="dot"></div>
           En vivo
         </div>
+        <div class="current-person" id="currentPerson">
+          <div class="empty">Sin turno activo</div>
+        </div>
       </div>
 
       <!-- stats -->
@@ -391,6 +490,18 @@
         Llamar siguiente →
       </button>
 
+      <!-- reject button -->
+      <button class="btn-reject" id="btnReject" onclick="confirmReject()" disabled>
+        ⏭ Rechazar y mandar al final
+      </button>
+
+      <!-- pendientes -->
+      <div class="card queue-section">
+        <div class="label">En cola</div>
+        <ul class="queue-list" id="queueList"></ul>
+        <div class="queue-empty" id="queueEmpty">No hay nadie esperando</div>
+      </div>
+
       <div class="divider"></div>
 
       <!-- reset -->
@@ -403,6 +514,8 @@
       let currentTurn = 0;
       let lastTicket = 0;
       let token = sessionStorage.getItem("ap") || "";
+      let lastVersion = -1;
+      let queueFetchInFlight = false;
 
       function authFetch(url, options = {}) {
         return fetch(url, {
@@ -452,9 +565,13 @@
       });
 
       const currentTurnEl = document.getElementById("currentTurn");
+      const currentPersonEl = document.getElementById("currentPerson");
       const waitingCountEl = document.getElementById("waitingCount");
       const issuedCountEl = document.getElementById("issuedCount");
       const btnNext = document.getElementById("btnNext");
+      const btnReject = document.getElementById("btnReject");
+      const queueListEl = document.getElementById("queueList");
+      const queueEmptyEl = document.getElementById("queueEmpty");
       const toastEl = document.getElementById("toast");
 
       let toastTimer;
@@ -473,6 +590,11 @@
       }
 
       function updateUI(data) {
+        if (typeof data.version === "number") {
+          if (data.version < lastVersion) return;
+          lastVersion = data.version;
+        }
+
         const prev = currentTurn;
         currentTurn = data.currentTurn;
         lastTicket = data.lastTicket;
@@ -491,6 +613,82 @@
         issuedCountEl.textContent = lastTicket;
 
         btnNext.disabled = waiting === 0;
+        btnReject.disabled = currentTurn === 0;
+
+        // Refrescar queue admin (con PII) tras cada evento
+        if (token) refreshAdminQueue(data.version);
+      }
+
+      async function refreshAdminQueue(eventVersion) {
+        if (!token || queueFetchInFlight) return;
+        queueFetchInFlight = true;
+        try {
+          const r = await authFetch("/api/admin/queue");
+          if (!r.ok) return;
+          const d = await r.json();
+          // Descartar respuestas más viejas que el último estado conocido
+          if (typeof d.version === "number" && d.version < lastVersion) return;
+          renderAdminQueue(d);
+        } catch (_) {
+          // sin red: no tocar la UI
+        } finally {
+          queueFetchInFlight = false;
+        }
+      }
+
+      function renderAdminQueue(d) {
+        // Current person
+        currentPersonEl.replaceChildren();
+        if (d.current) {
+          const nameEl = document.createElement("div");
+          nameEl.className = "name";
+          nameEl.textContent = d.current.name || "(sin nombre)";
+          currentPersonEl.appendChild(nameEl);
+          if (d.current.subject) {
+            const subjEl = document.createElement("div");
+            subjEl.className = "subject";
+            subjEl.textContent = d.current.subject;
+            currentPersonEl.appendChild(subjEl);
+          }
+        } else {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = "Sin turno activo";
+          currentPersonEl.appendChild(empty);
+        }
+
+        // Pending list
+        queueListEl.replaceChildren();
+        if (!d.pending || d.pending.length === 0) {
+          queueEmptyEl.style.display = "block";
+          return;
+        }
+        queueEmptyEl.style.display = "none";
+        for (const p of d.pending) {
+          const li = document.createElement("li");
+          li.className = "queue-item";
+
+          const num = document.createElement("div");
+          num.className = "num";
+          num.textContent = "#" + p.ticket;
+          li.appendChild(num);
+
+          const meta = document.createElement("div");
+          meta.className = "meta";
+          const qn = document.createElement("div");
+          qn.className = "qname";
+          qn.textContent = p.name || "(sin nombre)";
+          meta.appendChild(qn);
+          if (p.subject) {
+            const qs = document.createElement("div");
+            qs.className = "qsubj";
+            qs.textContent = p.subject;
+            meta.appendChild(qs);
+          }
+          li.appendChild(meta);
+
+          queueListEl.appendChild(li);
+        }
       }
 
       async function callNext() {
@@ -499,6 +697,31 @@
           const r = await authFetch("/api/next", { method: "POST" });
           const d = await r.json();
           showToast(`🔔 Turno ${d.currentTurn} llamado`);
+        } catch (_) {
+          showToast("Error de conexión");
+        }
+      }
+
+      async function confirmReject() {
+        if (currentTurn === 0) return;
+        if (
+          !confirm(
+            `¿Rechazar el turno ${currentTurn} y mandarlo al final de la cola?`,
+          )
+        )
+          return;
+        btnReject.disabled = true;
+        try {
+          const r = await authFetch("/api/admin/reject", { method: "POST" });
+          if (!r.ok) {
+            const err = await r.json().catch(() => ({}));
+            showToast(err.error || "No se pudo rechazar");
+            return;
+          }
+          const d = await r.json();
+          showToast(
+            `⏭ Turno ${d.oldTicket} reagendado como #${d.newTicket}`,
+          );
         } catch (_) {
           showToast("Error de conexión");
         }

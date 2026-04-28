@@ -7,6 +7,7 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
     />
     <title>🎫 Turnos</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <style>
       :root {
         --primary: #4f46e5;
@@ -230,6 +231,68 @@
         margin-top: 0.75rem;
       }
 
+      /* form */
+      .field {
+        display: block;
+        text-align: left;
+        margin-top: 0.85rem;
+      }
+      .field label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 0.3rem;
+      }
+      .field input,
+      .field textarea {
+        width: 100%;
+        padding: 0.75rem 0.9rem;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 0.65rem;
+        font-size: 1rem;
+        font-family: inherit;
+        outline: none;
+        box-sizing: border-box;
+        background: #fafafa;
+      }
+      .field input:focus,
+      .field textarea:focus {
+        border-color: var(--primary);
+        background: white;
+      }
+      .field textarea {
+        resize: vertical;
+        min-height: 70px;
+      }
+      .field-error {
+        display: none;
+        color: var(--danger);
+        font-size: 0.8rem;
+        margin-top: 0.35rem;
+        font-weight: 600;
+      }
+      .field-error.show {
+        display: block;
+      }
+
+      /* aviso de renumerado */
+      #renumberNotice {
+        display: none;
+        background: var(--warning-bg);
+        color: #92400e;
+        padding: 0.7rem 0.9rem;
+        border-radius: 0.65rem;
+        font-size: 0.88rem;
+        font-weight: 600;
+        margin-top: 0.85rem;
+      }
+      #renumberNotice.show {
+        display: block;
+      }
+
       /* ── flash overlay ── */
       #flash {
         display: none;
@@ -303,13 +366,26 @@
 
       <!-- mi turno -->
       <div id="ticketSection"></div>
+
+      <!-- aviso de renumerado tras rechazo -->
+      <div id="renumberNotice"></div>
     </main>
 
     <script>
       let myTicket = parseInt(localStorage.getItem("turno_ticket")) || null;
+      let myToken = localStorage.getItem("turno_token") || null;
+      let savedName = localStorage.getItem("turno_user_name") || "";
       let currentTurn = 0;
       let lastTicket = 0;
-      let activeTickets = [];
+      let activeQueue = [];
+      let lastVersion = -1;
+      let renumberCheckInFlight = false;
+
+      // Si tenemos número pero no token (estado legacy), forzamos limpieza.
+      if (myTicket && !myToken) {
+        myTicket = null;
+        localStorage.removeItem("turno_ticket");
+      }
 
       let flashShown = false;
 
@@ -366,19 +442,28 @@
       }
 
       function updateUI(data) {
+        // descartar payloads viejos
+        if (typeof data.version === "number") {
+          if (data.version < lastVersion) return;
+          lastVersion = data.version;
+        }
+
         const prevTurn = currentTurn;
         currentTurn = data.currentTurn;
         lastTicket = data.lastTicket;
-        activeTickets = data.active || [];
+        activeQueue = data.queue || [];
 
-        // validate stale ticket (server reset o cancelado desde otro lado)
+        // Si tenemos token pero el ticket local no aparece, puede ser:
+        //  - renumerado tras rechazo (token sigue, ticket cambia)
+        //  - cancelado server-side / reset
+        // Consultamos al servidor con el token. NO limpiamos ante fallos.
         if (
+          myToken &&
           myTicket &&
-          !activeTickets.includes(myTicket) &&
+          !activeQueue.includes(myTicket) &&
           myTicket !== currentTurn
         ) {
-          myTicket = null;
-          localStorage.removeItem("turno_ticket");
+          checkMyTicket();
         }
 
         // current turn display
@@ -411,18 +496,118 @@
         renderTicket();
       }
 
+      async function checkMyTicket() {
+        if (!myToken || renumberCheckInFlight) return;
+        renumberCheckInFlight = true;
+        try {
+          const r = await fetch("/api/my-ticket", {
+            headers: { "X-Ticket-Token": myToken },
+          });
+          if (!r.ok) return; // fallo transitorio: no tocar nada
+          const d = await r.json();
+          if (d.ticket === null) {
+            // cancelado/reset server-side
+            myTicket = null;
+            myToken = null;
+            localStorage.removeItem("turno_ticket");
+            localStorage.removeItem("turno_token");
+            hideRenumberNotice();
+            renderTicket();
+          } else if (d.ticket !== myTicket) {
+            const oldTicket = myTicket;
+            myTicket = d.ticket;
+            localStorage.setItem("turno_ticket", String(myTicket));
+            flashShown = false;
+            showRenumberNotice(oldTicket, myTicket);
+            renderTicket();
+          }
+        } catch (_) {
+          // sin red: no hacer nada
+        } finally {
+          renumberCheckInFlight = false;
+        }
+      }
+
+      function showRenumberNotice(oldNum, newNum) {
+        const el = document.getElementById("renumberNotice");
+        el.textContent = `Tu turno fue reagendado: ahora eres el #${newNum} (antes #${oldNum}).`;
+        el.classList.add("show");
+        try { navigator.vibrate?.(150); } catch (_) {}
+      }
+      function hideRenumberNotice() {
+        const el = document.getElementById("renumberNotice");
+        if (el) {
+          el.classList.remove("show");
+          el.textContent = "";
+        }
+      }
+
       function renderTicket() {
         if (!myTicket) {
-          ticketSection.innerHTML = `
-        <div class="card get-ticket">
-          <div class="label">Saca tu turno</div>
-          <p class="subtitle">Toca el botón y te avisaremos cuando llegue tu número</p>
-          <button class="btn btn-primary" onclick="takeTicket()">🎫 Quiero un turno</button>
-        </div>`;
+          hideRenumberNotice();
+          // Construimos el form sin innerHTML para los datos dinámicos.
+          ticketSection.innerHTML = "";
+          const card = document.createElement("div");
+          card.className = "card get-ticket";
+
+          const label = document.createElement("div");
+          label.className = "label";
+          label.textContent = "Saca tu turno";
+          card.appendChild(label);
+
+          const sub = document.createElement("p");
+          sub.className = "subtitle";
+          sub.textContent =
+            "Déjanos tu nombre y te avisaremos cuando llegue tu turno";
+          card.appendChild(sub);
+
+          const fName = document.createElement("div");
+          fName.className = "field";
+          const lblN = document.createElement("label");
+          lblN.setAttribute("for", "inpName");
+          lblN.textContent = "Tu nombre";
+          const inpN = document.createElement("input");
+          inpN.id = "inpName";
+          inpN.type = "text";
+          inpN.maxLength = 60;
+          inpN.placeholder = "Ej. María";
+          inpN.value = savedName;
+          inpN.autocomplete = "given-name";
+          fName.appendChild(lblN);
+          fName.appendChild(inpN);
+          const errN = document.createElement("p");
+          errN.className = "field-error";
+          errN.id = "errName";
+          errN.textContent = "Escribe tu nombre, por favor";
+          fName.appendChild(errN);
+          card.appendChild(fName);
+
+          const fSubj = document.createElement("div");
+          fSubj.className = "field";
+          const lblS = document.createElement("label");
+          lblS.setAttribute("for", "inpSubject");
+          lblS.textContent = "Asunto (opcional)";
+          const inpS = document.createElement("textarea");
+          inpS.id = "inpSubject";
+          inpS.maxLength = 200;
+          inpS.placeholder = "¿De qué quieres hablar?";
+          fSubj.appendChild(lblS);
+          fSubj.appendChild(inpS);
+          card.appendChild(fSubj);
+
+          const btn = document.createElement("button");
+          btn.className = "btn btn-primary";
+          btn.id = "btnTake";
+          btn.style.marginTop = "1rem";
+          btn.textContent = "🎫 Quiero un turno";
+          btn.addEventListener("click", takeTicket);
+          card.appendChild(btn);
+
+          ticketSection.appendChild(card);
           return;
         }
 
-        const ahead = activeTickets.filter(
+        const ahead = activeQueue.filter(
           (t) => t > currentTurn && t < myTicket,
         ).length;
         const isMyTurn = currentTurn === myTicket;
@@ -453,26 +638,59 @@
       }
 
       async function takeTicket() {
+        const inpN = document.getElementById("inpName");
+        const inpS = document.getElementById("inpSubject");
+        const errN = document.getElementById("errName");
+        const btn = document.getElementById("btnTake");
+        const name = (inpN.value || "").trim();
+        const subject = (inpS.value || "").trim();
+        if (!name) {
+          errN.classList.add("show");
+          inpN.focus();
+          return;
+        }
+        errN.classList.remove("show");
+        btn.disabled = true;
+        btn.textContent = "Enviando…";
         try {
-          const r = await fetch("/api/ticket", { method: "POST" });
+          const r = await fetch("/api/ticket", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, subject }),
+          });
+          if (!r.ok) throw new Error("bad response");
           const d = await r.json();
           myTicket = d.ticket;
+          myToken = d.token;
+          savedName = name;
           flashShown = false;
-          localStorage.setItem("turno_ticket", myTicket);
+          localStorage.setItem("turno_ticket", String(myTicket));
+          localStorage.setItem("turno_token", myToken);
+          localStorage.setItem("turno_user_name", savedName);
+          hideRenumberNotice();
           renderTicket();
         } catch (_) {
+          btn.disabled = false;
+          btn.textContent = "🎫 Quiero un turno";
           alert("No se pudo sacar turno. Revisa la conexión.");
         }
       }
 
       async function releaseTicket() {
         const num = myTicket;
+        const token = myToken;
         myTicket = null;
+        myToken = null;
         flashShown = false;
         localStorage.removeItem("turno_ticket");
+        localStorage.removeItem("turno_token");
+        hideRenumberNotice();
         renderTicket();
         try {
-          await fetch(`/api/ticket/${num}`, { method: "DELETE" });
+          await fetch(`/api/ticket/${num}`, {
+            method: "DELETE",
+            headers: token ? { "X-Ticket-Token": token } : {},
+          });
         } catch (_) {}
       }
 
